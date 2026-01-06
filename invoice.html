@@ -1,0 +1,3772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KINGU ELECTRICAL COMPANY LIMITED - Invoice System</title>
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#116a41">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Kingu Invoices">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%23116a41%22>⚡</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%23116a41%22>⚡</text></svg>">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jsPDF Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Chart.js for Reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --kingu-green: #116a41;
+            --kingu-red: #e63946;
+            --kingu-yellow-start: #ffae42;
+            --kingu-yellow-end: #ffea00;
+            --kingu-dark: #0a4d2a;
+            --kingu-light: #e8f5e9;
+            --kingu-accent: #ff6b35;
+            --kingu-success: #2a9d8f;
+            --kingu-white: #ffffff;
+            --kingu-blue: #2980b9;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* PWA Notification Bar */
+        .pwa-notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--kingu-green) 0%, var(--kingu-dark) 100%);
+            color: white;
+            padding: 12px 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .pwa-notification-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pwa-notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Offline Indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #e63946;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            z-index: 9999;
+            display: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Sync Notification */
+        .sync-notification {
+            position: fixed;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2980b9;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9998;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(135deg, var(--kingu-green) 0%, var(--kingu-dark) 100%);
+            color: white;
+            padding: 25px 20px;
+            box-shadow: 2px 0 15px rgba(17, 106, 65, 0.3);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--kingu-yellow-start) 0%, var(--kingu-yellow-end) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo:before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: white;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .logo i {
+            font-size: 28px;
+            color: var(--kingu-red);
+            z-index: 2;
+            position: relative;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .company-header {
+            line-height: 1.2;
+            margin-bottom: 3px;
+        }
+
+        .company-header .kingu {
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: block;
+        }
+
+        .company-header .electrical {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--kingu-red);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin-top: -2px;
+        }
+
+        .company-full-name {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 2px;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .company-tagline {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.9);
+            font-style: italic;
+            line-height: 1.3;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 5px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-top: 30px;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .nav-link i {
+            margin-right: 12px;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-left: 3px solid var(--kingu-red);
+        }
+
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 3px solid var(--kingu-red);
+            font-weight: 600;
+        }
+
+        /* Company Info in Sidebar */
+        .company-info-sidebar {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+        }
+
+        .company-info-sidebar p {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            line-height: 1.4;
+        }
+
+        .company-info-sidebar i {
+            margin-right: 10px;
+            margin-top: 3px;
+            color: var(--kingu-yellow-end);
+            min-width: 16px;
+        }
+
+        .contact-badge {
+            display: inline-block;
+            background-color: var(--kingu-red);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        /* Contact Badges */
+        .contact-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .contact-badge-small {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--kingu-light);
+            color: var(--kingu-green);
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-weight: 600;
+            border: 1px solid rgba(17, 106, 65, 0.2);
+        }
+
+        .contact-badge-small i {
+            margin-right: 5px;
+            font-size: 14px;
+        }
+
+        .whatsapp-badge {
+            background-color: rgba(37, 211, 102, 0.1);
+            color: #128C7E;
+            border-color: rgba(37, 211, 102, 0.3);
+        }
+
+        .email-badge {
+            background-color: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
+            border-color: rgba(66, 133, 244, 0.3);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: var(--kingu-white);
+            margin-left: 260px;
+            width: calc(100% - 260px);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--kingu-light);
+        }
+
+        .header h1 {
+            color: var(--kingu-green);
+            font-size: 28px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .header h1:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            bottom: 5px;
+            width: 4px;
+            background: linear-gradient(to bottom, var(--kingu-green), var(--kingu-red));
+            border-radius: 2px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background-color: var(--kingu-green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--kingu-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 106, 65, 0.2);
+        }
+
+        .btn-success {
+            background-color: var(--kingu-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #21867a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(42, 157, 143, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background-color: var(--kingu-red);
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background-color: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.2);
+        }
+
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);
+        }
+
+        .btn-pdf {
+            background-color: #d32f2f;
+            color: white;
+        }
+
+        .btn-pdf:hover {
+            background-color: #b71c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        /* Invoice Type Selector */
+        .invoice-type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(17, 106, 65, 0.1);
+            border-left: 4px solid var(--kingu-green);
+        }
+
+        .type-btn {
+            padding: 10px 25px;
+            border: 2px solid var(--kingu-green);
+            background: white;
+            color: var(--kingu-green);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .type-btn.active {
+            background: var(--kingu-green);
+            color: white;
+        }
+
+        .type-btn.quotation-active {
+            background: var(--kingu-blue);
+            color: white;
+            border-color: var(--kingu-blue);
+        }
+
+        .type-btn:hover:not(.active):not(.quotation-active) {
+            background-color: var(--kingu-light);
+        }
+
+        /* Invoice Form Container */
+        .invoice-form-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(17, 106, 65, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-top: 4px solid var(--kingu-green);
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .quotation-form-container {
+            border-top: 4px solid var(--kingu-blue);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: var(--kingu-green);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--kingu-light);
+            display: flex;
+            align-items: center;
+        }
+
+        .quotation-section-title {
+            color: var(--kingu-blue);
+        }
+
+        .section-title i {
+            margin-right: 10px;
+            color: var(--kingu-red);
+        }
+
+        .quotation-section-title i {
+            color: var(--kingu-blue);
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 250px;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--kingu-dark);
+            font-size: 14px;
+        }
+
+        .quotation-form-group label {
+            color: var(--kingu-blue);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--kingu-green);
+            box-shadow: 0 0 0 3px rgba(17, 106, 65, 0.1);
+        }
+
+        .quotation-control:focus {
+            border-color: var(--kingu-blue);
+            box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.1);
+        }
+
+        /* Proforma Specific Fields */
+        .proforma-fields {
+            background-color: var(--kingu-light);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid var(--kingu-red);
+        }
+
+        .quotation-fields {
+            background-color: rgba(41, 128, 185, 0.1);
+            border-left: 4px solid var(--kingu-blue);
+        }
+
+        /* Invoice Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .items-table thead {
+            background-color: var(--kingu-green);
+        }
+
+        .quotation-items-table thead {
+            background-color: var(--kingu-blue);
+        }
+
+        .items-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: white;
+            border-bottom: 2px solid var(--kingu-dark);
+        }
+
+        .quotation-items-table th {
+            border-bottom: 2px solid #1a5276;
+        }
+
+        .items-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .items-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .items-table input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .delete-item {
+            background-color: var(--kingu-red);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .delete-item:hover {
+            background-color: #c62828;
+            transform: scale(1.05);
+        }
+
+        .add-item-btn {
+            margin-top: 15px;
+            background-color: var(--kingu-light);
+            color: var(--kingu-green);
+            border: 2px dashed var(--kingu-green);
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .quotation-add-item-btn {
+            background-color: rgba(41, 128, 185, 0.1);
+            color: var(--kingu-blue);
+            border: 2px dashed var(--kingu-blue);
+        }
+
+        .add-item-btn:hover {
+            background-color: var(--kingu-green);
+            color: white;
+            border-color: var(--kingu-green);
+        }
+
+        .quotation-add-item-btn:hover {
+            background-color: var(--kingu-blue);
+            color: white;
+            border-color: var(--kingu-blue);
+        }
+
+        .add-item-btn i {
+            margin-right: 8px;
+        }
+
+        /* VAT Section Styles */
+        .vat-section {
+            background: rgba(17, 106, 65, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 3px solid var(--kingu-green);
+        }
+
+        .tax-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tax-option {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            background: white;
+        }
+
+        .tax-option:hover {
+            border-color: var(--kingu-green);
+            background: rgba(17, 106, 65, 0.05);
+        }
+
+        .tax-option.active {
+            border-color: var(--kingu-green);
+            background: var(--kingu-green);
+            color: white;
+        }
+
+        .tax-option input[type="radio"] {
+            display: none;
+        }
+
+        /* Totals Section */
+        .totals-section {
+            background: linear-gradient(135deg, #f8fafc 0%, var(--kingu-light) 100%);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border-left: 4px solid var(--kingu-green);
+        }
+
+        .quotation-totals-section {
+            background: linear-gradient(135deg, #f8fafc 0%, rgba(41, 128, 185, 0.1) 100%);
+            border-left: 4px solid var(--kingu-blue);
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(17, 106, 65, 0.1);
+        }
+
+        .quotation-total-row {
+            border-bottom: 1px solid rgba(41, 128, 185, 0.2);
+        }
+
+        .total-label {
+            font-weight: 600;
+            color: var(--kingu-dark);
+        }
+
+        .quotation-total-label {
+            color: var(--kingu-blue);
+        }
+
+        .total-value {
+            font-weight: 700;
+            color: var(--kingu-green);
+        }
+
+        .quotation-total-value {
+            color: var(--kingu-blue);
+        }
+
+        .grand-total {
+            font-size: 20px;
+            border-top: 2px solid var(--kingu-green);
+            margin-top: 10px;
+            padding-top: 15px;
+            color: var(--kingu-dark);
+        }
+
+        .quotation-grand-total {
+            border-top: 2px solid var(--kingu-blue);
+            color: var(--kingu-blue);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* Preview Container - Horizontal Terms & Bank Details */
+        .preview-terms-bank {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .preview-terms-box, .preview-bank-box {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--kingu-green);
+        }
+
+        .preview-terms-title, .preview-bank-title {
+            color: var(--kingu-green);
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .preview-terms-title i, .preview-bank-title i {
+            margin-right: 10px;
+        }
+
+        .quotation-terms-box, .quotation-bank-box {
+            border-left: 4px solid var(--kingu-blue);
+        }
+
+        .quotation-terms-title, .quotation-bank-title {
+            color: var(--kingu-blue);
+        }
+
+        /* Invoice Preview */
+        .invoice-preview-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(17, 106, 65, 0.1);
+            padding: 40px;
+            margin-top: 30px;
+            border-top: 4px solid var(--kingu-green);
+            display: none;
+        }
+
+        .quotation-preview-container {
+            border-top: 4px solid var(--kingu-blue);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--kingu-light);
+        }
+
+        .invoice-company-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 300px;
+        }
+
+        .company-logo-text {
+            font-family: 'Georgia', serif;
+        }
+
+        .kingu-logo {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--kingu-green);
+            line-height: 0.9;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .electrical-logo {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--kingu-red);
+            line-height: 0.9;
+            margin-bottom: 8px;
+            display: block;
+            margin-left: 0;
+        }
+
+        .company-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--kingu-dark);
+            margin-bottom: 10px;
+            border-top: 2px solid var(--kingu-light);
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+
+        .tagline-logo {
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .contact-info-logo {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .contact-info-logo .phone-numbers {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin: 5px 0;
+        }
+
+        .contact-info-logo .phone-numbers span {
+            background-color: var(--kingu-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(17, 106, 65, 0.2);
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .contact-info-logo .email {
+            color: var(--kingu-green);
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .contact-info-logo .address {
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
+        }
+
+        .invoice-title {
+            font-size: 32px;
+            color: var(--kingu-green);
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .quotation-title {
+            color: var(--kingu-blue);
+        }
+
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 30px;
+        }
+
+        .company-info, .client-info {
+            flex: 1;
+        }
+
+        .info-title {
+            font-weight: 700;
+            color: var(--kingu-green);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--kingu-light);
+            font-size: 16px;
+        }
+
+        .quotation-info-title {
+            color: var(--kingu-blue);
+        }
+
+        .company-details p, .client-details p {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .invoice-info {
+            flex: 0.8;
+        }
+
+        .invoice-info-box {
+            background-color: var(--kingu-light);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--kingu-green);
+        }
+
+        .quotation-info-box {
+            background-color: rgba(41, 128, 185, 0.1);
+            border-left: 4px solid var(--kingu-blue);
+        }
+
+        .invoice-info-box p {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .invoice-info-box strong {
+            color: var(--kingu-dark);
+        }
+
+        .quotation-info-box strong {
+            color: var(--kingu-blue);
+        }
+
+        .invoice-items-preview {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .invoice-items-preview thead {
+            background-color: var(--kingu-green);
+        }
+
+        .quotation-items-preview thead {
+            background-color: var(--kingu-blue);
+        }
+
+        .invoice-items-preview th {
+            padding: 18px;
+            text-align: left;
+            font-weight: 700;
+            color: white;
+            border-bottom: 3px solid var(--kingu-dark);
+        }
+
+        .quotation-items-preview th {
+            border-bottom: 3px solid #1a5276;
+        }
+
+        .invoice-items-preview td {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .invoice-items-preview tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .invoice-totals {
+            width: 350px;
+            margin-left: auto;
+            margin-top: 30px;
+            background: var(--kingu-light);
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid var(--kingu-green);
+        }
+
+        .quotation-totals {
+            background: rgba(41, 128, 185, 0.1);
+            border-left: 4px solid var(--kingu-blue);
+        }
+
+        /* History Containers */
+        .history-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(17, 106, 65, 0.1);
+            padding: 30px;
+            margin-top: 20px;
+            border-top: 4px solid var(--kingu-green);
+            display: none;
+        }
+
+        /* A4 Preview Container */
+        .a4-preview-container {
+            display: none;
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            padding: 20mm;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.3;
+        }
+
+        /* Footer Styles */
+        .invoice-footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 2px solid var(--kingu-light);
+            text-align: center;
+        }
+
+        .authorized-signature {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .signature-line {
+            width: 300px;
+            height: 1px;
+            background-color: #333;
+            margin: 40px auto 10px;
+        }
+
+        .signature-text {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        .stamp {
+            position: absolute;
+            right: 40px;
+            bottom: 40px;
+            padding: 15px 30px;
+            background-color: var(--kingu-light);
+            border: 2px dashed var(--kingu-green);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--kingu-green);
+            transform: rotate(5deg);
+        }
+
+        .quotation-stamp {
+            position: absolute;
+            right: 40px;
+            top: 40px;
+            padding: 15px 30px;
+            background-color: rgba(41, 128, 185, 0.1);
+            border: 2px dashed var(--kingu-blue);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--kingu-blue);
+            transform: rotate(5deg);
+        }
+
+        /* Invoice History & Proforma Invoices Styles */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .history-table th {
+            background-color: var(--kingu-green);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .history-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .history-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-paid {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+
+        .status-pending {
+            background-color: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+        }
+
+        .status-overdue {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        .status-quotation {
+            background-color: rgba(41, 128, 185, 0.2);
+            color: var(--kingu-blue);
+        }
+
+        .status-draft {
+            background-color: rgba(155, 155, 155, 0.2);
+            color: #555;
+        }
+
+        .action-btn-small {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 5px;
+        }
+
+        .action-btn-small:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none;
+        }
+
+        .mt-20 {
+            margin-top: 20px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .currency-select {
+            width: 120px;
+            margin-right: 10px;
+            border: 1px solid var(--kingu-green);
+        }
+
+        .quotation-currency-select {
+            border: 1px solid var(--kingu-blue);
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+            
+            body, html {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                width: 210mm !important;
+            }
+            
+            .invoice-preview-container,
+            .invoice-preview-container * {
+                visibility: visible !important;
+                display: block !important;
+            }
+            
+            .invoice-preview-container {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 210mm !important;
+                min-height: 297mm !important;
+                margin: 0 !important;
+                padding: 20mm !important;
+                box-shadow: none !important;
+                background-color: white !important;
+                border: none !important;
+                border-radius: 0 !important;
+                page-break-inside: avoid !important;
+                page-break-after: avoid !important;
+            }
+            
+            .sidebar, 
+            .header, 
+            .invoice-form-container, 
+            .action-buttons, 
+            .invoice-type-selector,
+            .nav-menu,
+            .btn,
+            button,
+            .history-container,
+            .main-content > *:not(.invoice-preview-container),
+            .no-print,
+            .a4-preview-container,
+            .pwa-notification,
+            .offline-indicator,
+            .sync-notification {
+                display: none !important;
+                visibility: hidden !important;
+            }
+            
+            .container {
+                display: block !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            .main-content {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+            
+            .stamp, .quotation-stamp {
+                display: block !important;
+                visibility: visible !important;
+            }
+        }
+
+        @media screen and (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 15px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .action-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .a4-preview-container {
+                width: 100%;
+                padding: 10mm;
+                zoom: 0.8;
+            }
+            
+            .tax-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .invoice-details {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .invoice-totals {
+                width: 100%;
+            }
+            
+            .preview-terms-bank {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .footer-contact {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- PWA Notification Bar -->
+    <div id="pwaNotification" class="pwa-notification">
+        <div class="pwa-notification-content">
+            <i class="fas fa-mobile-alt"></i>
+            <span id="pwaNotificationText">Install Kingu Invoice App for better experience</span>
+        </div>
+        <div>
+            <button class="btn btn-success" onclick="installApp()" style="margin-right: 10px; padding: 8px 16px; font-size: 14px;">
+                <i class="fas fa-download"></i> Install
+            </button>
+            <button class="pwa-notification-close" onclick="dismissPwaNotification()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div class="offline-indicator" id="offlineIndicator">
+        <i class="fas fa-wifi-slash"></i>
+        You are currently offline. Changes will be saved locally and synced when you're back online.
+    </div>
+
+    <!-- Sync Notification -->
+    <div class="sync-notification" id="syncNotification">
+        <i class="fas fa-sync-alt fa-spin"></i>
+        <span id="syncNotificationText">Syncing offline documents...</span>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="logo-text">
+                    <div class="company-header">
+                        <span class="kingu">Kingu</span>
+                        <span class="electrical">Electrical</span>
+                    </div>
+                    <div class="company-full-name">Company Limited</div>
+                    <div class="company-tagline">Quality Electrical Services with Professional Experience</div>
+                </div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <button class="nav-link active" id="nav-create">
+                        <i class="fas fa-file-invoice-dollar"></i> Create Invoice
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="nav-proforma">
+                        <i class="fas fa-file-contract"></i> Proforma Invoices
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="nav-history">
+                        <i class="fas fa-history"></i> Document History
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="nav-clients">
+                        <i class="fas fa-users"></i> Client Database
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="nav-reports">
+                        <i class="fas fa-chart-bar"></i> Reports & Analytics
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="nav-settings">
+                        <i class="fas fa-cog"></i> System Settings
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="company-info-sidebar">
+                <p><i class="fas fa-map-marker-alt"></i> <span>P.O. Box 62313<br>Dar Es Salaam Tanzania</span></p>
+                <p><i class="fas fa-hashtag"></i> TIN: 157-024-493</p>
+                <p><i class="fas fa-phone"></i> +255 677 01 47 40</p>
+                <p><i class="fas fa-phone"></i> +255 763 95 79 08</p>
+                <p><i class="fas fa-phone"></i> +255 682 84 35 52</p>
+                <p><i class="fab fa-whatsapp"></i> +255 682 84 35 52 <span style="background-color: var(--kingu-red); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-weight: bold;">WHATSAPP</span></p>
+                <p><i class="fas fa-envelope"></i> kinguelectricaltz@gmail.com</p>
+                <p><i class="fas fa-university"></i> STANBIC BANK<br>912 000 275 9274</p>
+                
+                <div class="contact-badges">
+                    <span class="contact-badge-small">
+                        <i class="fas fa-phone"></i> Call Us
+                    </span>
+                    <span class="contact-badge-small whatsapp-badge">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </span>
+                    <span class="contact-badge-small email-badge">
+                        <i class="fas fa-envelope"></i> Email
+                    </span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header for Create Invoice -->
+            <div class="header" id="main-header">
+                <h1 id="page-title">Create Proforma Invoice</h1>
+                <div>
+                    <button class="btn btn-whatsapp" id="whatsapp-btn" style="margin-right: 10px;">
+                        <i class="fab fa-whatsapp"></i> Share Document
+                    </button>
+                    <button class="btn btn-pdf" id="pdf-btn" style="margin-right: 10px;">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                    <button class="btn btn-accent" id="load-sample-btn">
+                        <i class="fas fa-file-import"></i> Load Sample
+                    </button>
+                    <button class="btn btn-secondary" id="print-btn" style="display: none;">
+                        <i class="fas fa-print"></i> Print Document
+                    </button>
+                    <button class="btn btn-success" id="new-document-btn" style="margin-right: 10px;">
+                        <i class="fas fa-plus"></i> New Document
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Invoice Type Selector -->
+            <div class="invoice-type-selector" id="type-selector">
+                <button class="type-btn active" id="btn-proforma">Proforma Invoice</button>
+                <button class="type-btn" id="btn-standard">Standard Invoice</button>
+                <button class="type-btn" id="btn-quotation">Quotation</button>
+            </div>
+            
+            <!-- Invoice Form -->
+            <div id="invoice-form" class="invoice-form-container">
+                <div class="form-section">
+                    <h3 class="section-title" id="details-title"><i class="fas fa-info-circle"></i> Invoice Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="invoice-number" id="doc-number-label">Invoice Number</label>
+                            <div style="display: flex; align-items: center;">
+                                <input type="text" id="invoice-number" class="form-control" value="PROFORMA/GL/06/2025/001" style="flex: 1;">
+                                <button class="btn" style="margin-left: 10px; padding: 10px 15px; background-color: var(--kingu-light);" id="generate-number-btn" title="Generate New Number">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="invoice-date" id="doc-date-label">Invoice Date</label>
+                            <input type="date" id="invoice-date" class="form-control" value="">
+                        </div>
+                        <div class="form-group">
+                            <label for="due-date">Due Date</label>
+                            <input type="date" id="due-date" class="form-control" value="">
+                        </div>
+                    </div>
+                    
+                    <div class="proforma-fields" id="extra-fields">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="currency">Currency</label>
+                                <select id="currency" class="form-control currency-select">
+                                    <option value="TSh">Tanzanian Shilling (TSh)</option>
+                                    <option value="USD">US Dollar ($)</option>
+                                    <option value="EUR">Euro (€)</option>
+                                    <option value="GBP">British Pound (£)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="delivery-time">Delivery Time (Days after PO)</label>
+                                <input type="number" id="delivery-time" class="form-control" value="7" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="payment-terms">Payment Terms</label>
+                                <select id="payment-terms" class="form-control">
+                                    <option value="100% after delivery">100% after delivery</option>
+                                    <option value="50% advance, 50% after delivery">50% advance, 50% after delivery</option>
+                                    <option value="30 days net">30 days net</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" id="custom-terms-container" style="display: none;">
+                            <div class="form-group">
+                                <label for="custom-payment-terms">Custom Payment Terms</label>
+                                <textarea id="custom-payment-terms" class="form-control" rows="2" placeholder="Enter custom payment terms"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-user-tie"></i> Client Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="client-name">Client Name</label>
+                            <div style="display: flex;">
+                                <input type="text" id="client-name" class="form-control" placeholder="Enter client name" value="GREENLIGHT PLANNET TANZANIA LTD">
+                                <button class="btn" style="margin-left: 10px; padding: 10px 15px; background-color: var(--kingu-light);" id="client-search-btn" title="Search Client Database">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-email">Client Email</label>
+                            <input type="email" id="client-email" class="form-control" placeholder="Enter client email" value="accounts@greenlight.co.tz">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-phone">Client Phone</label>
+                            <input type="text" id="client-phone" class="form-control" placeholder="Enter client phone" value="+255 765 432 100">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="client-address">Client Address</label>
+                            <textarea id="client-address" class="form-control" rows="2" placeholder="Enter client address">ARUSHA, TANZANIA</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="client-tin">TIN Number</label>
+                            <input type="text" id="client-tin" class="form-control" placeholder="Enter TIN number" value="109-628-980">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-vat">VAT Number (if applicable)</label>
+                            <input type="text" id="client-vat" class="form-control" placeholder="Enter VAT number">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="section-title" id="items-title"><i class="fas fa-list-alt"></i> Invoice Items</h3>
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                        <button class="btn" style="background-color: var(--kingu-light); color: var(--kingu-green);" id="add-service-item">
+                            <i class="fas fa-wrench"></i> Add Service
+                        </button>
+                        <button class="btn" style="background-color: var(--kingu-light); color: var(--kingu-green);" id="add-product-item">
+                            <i class="fas fa-box"></i> Add Product
+                        </button>
+                        <button class="btn" style="background-color: var(--kingu-light); color: var(--kingu-green);" id="add-labor-item">
+                            <i class="fas fa-user-hard-hat"></i> Add Labor
+                        </button>
+                    </div>
+                    <table class="items-table" id="items-table">
+                        <thead>
+                            <tr>
+                                <th>DESCRIPTION</th>
+                                <th style="width: 100px;">UNITS</th>
+                                <th style="width: 150px;">UNIT PRICE</th>
+                                <th style="width: 150px;">AMOUNT</th>
+                                <th style="width: 80px;">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-items">
+                            <tr>
+                                <td><input type="text" class="item-description" placeholder="Service description" value="Engine service and Preventive maintenance"></td>
+                                <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="currency-symbol" style="margin-right: 5px;">TSh</span>
+                                        <input type="number" class="item-price" min="0" step="0.01" value="350000.00" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td class="item-total text-right">TSh 350,000.00</td>
+                                <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" class="item-description" placeholder="Service description" value="PLC check and configuration"></td>
+                                <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="currency-symbol" style="margin-right: 5px;">TSh</span>
+                                        <input type="number" class="item-price" min="0" step="0.01" value="250000.00" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td class="item-total text-right">TSh 250,000.00</td>
+                                <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <button class="add-item-btn" id="add-item-btn">
+                        <i class="fas fa-plus-circle"></i> Add Custom Item
+                    </button>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 15px; align-items: center;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label for="discount-type">Discount</label>
+                            <select id="discount-type" class="form-control">
+                                <option value="none">No Discount</option>
+                                <option value="percentage">Percentage %</option>
+                                <option value="fixed">Fixed Amount</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0; display: none;" id="discount-value-container">
+                            <label for="discount-value">Discount Value</label>
+                            <input type="number" id="discount-value" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VAT/Tax Section -->
+                <div class="vat-section">
+                    <h4 style="color: var(--kingu-green); margin-bottom: 15px;">
+                        <i class="fas fa-percentage"></i> VAT/Tax Options
+                    </h4>
+                    <div class="tax-options">
+                        <label class="tax-option active" for="vat-none">
+                            <input type="radio" id="vat-none" name="vat-option" value="none" checked>
+                            <div>
+                                <strong>No VAT/Tax</strong>
+                                <div style="font-size: 12px; margin-top: 5px;">Apply no taxes</div>
+                            </div>
+                        </label>
+                        <label class="tax-option" for="vat-standard">
+                            <input type="radio" id="vat-standard" name="vat-option" value="standard">
+                            <div>
+                                <strong>Standard VAT</strong>
+                                <div style="font-size: 12px; margin-top: 5px;">18% VAT Rate</div>
+                            </div>
+                        </label>
+                        <label class="tax-option" for="vat-custom">
+                            <input type="radio" id="vat-custom" name="vat-option" value="custom">
+                            <div>
+                                <strong>Custom Rate</strong>
+                                <div style="font-size: 12px; margin-top: 5px;">Set your own rate</div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div id="vat-custom-container" style="margin-top: 15px; display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="custom-vat-rate">Tax Rate (%)</label>
+                                <input type="number" id="custom-vat-rate" class="form-control" min="0" max="100" step="0.1" value="18">
+                            </div>
+                            <div class="form-group">
+                                <label for="vat-number-input">VAT/Tax Number (if applicable)</label>
+                                <input type="text" id="vat-number-input" class="form-control" placeholder="Enter VAT/Tax number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Totals Section -->
+                <div class="totals-section" id="totals-section">
+                    <div class="total-row">
+                        <span class="total-label">Subtotal:</span>
+                        <span class="total-value" id="subtotal">TSh 600,000.00</span>
+                    </div>
+                    <div class="total-row" id="discount-row" style="display: none;">
+                        <span class="total-label" id="discount-label">Discount:</span>
+                        <span class="total-value" id="discount-amount">TSh 0.00</span>
+                    </div>
+                    <div class="total-row" id="vat-row">
+                        <span class="total-label">VAT (18%):</span>
+                        <span class="total-value" id="tax">TSh 108,000.00</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span class="total-label" id="grand-total-label">GRAND TOTAL:</span>
+                        <span class="total-value" id="grand-total">TSh 708,000.00</span>
+                    </div>
+                    <div class="total-row" style="margin-top: 10px; font-size: 14px; color: #666;">
+                        <span class="total-label">Amount in Words:</span>
+                        <span class="total-value" id="amount-words">Seven hundred eight thousand Tanzanian Shillings only</span>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-file-signature"></i> Terms & Conditions</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bank-details">Bank Details</label>
+                            <textarea id="bank-details" class="form-control" rows="3">BANK: STANBIC BANK TANZANIA LIMITED
+ACCOUNT NAME: KINGU ELECTRICAL COMPANY LIMITED
+ACCOUNT NUMBER: 912 000 275 9274
+SWIFT CODE: SBICTZTX</textarea>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="notes">Additional Notes / Special Instructions</label>
+                            <textarea id="notes" class="form-control" rows="4" placeholder="Add any additional notes here...">1. This Proforma shall remain valid for 30 days only.
+2. Prices are inclusive of VAT where applicable.
+3. Delivery subject to stock availability.
+4. All disputes subject to Dar es Salaam jurisdiction.</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="clear-btn">
+                        <i class="fas fa-redo"></i> Clear Form
+                    </button>
+                    <button class="btn btn-success" id="preview-btn">
+                        <i class="fas fa-eye"></i> Preview Document
+                    </button>
+                    <button class="btn btn-primary" id="save-btn">
+                        <i class="fas fa-save"></i> Save Proforma
+                    </button>
+                    <button class="btn" style="background-color: var(--kingu-accent); color: white;" id="send-email-btn">
+                        <i class="fas fa-paper-plane"></i> Send via Email
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Enhanced Document Preview -->
+            <div id="invoice-preview" class="invoice-preview-container">
+                <div class="stamp" style="display: none;">PROFORMA INVOICE</div>
+                <div class="quotation-stamp" style="display: none;">QUOTATION</div>
+                
+                <div class="invoice-header">
+                    <div class="invoice-company-logo">
+                        <div class="company-logo-text">
+                            <div class="kingu-logo">Kingu</div>
+                            <div class="electrical-logo">Electrical</div>
+                            <div class="company-logo">Company Limited</div>
+                            <div class="tagline-logo">Quality Electrical Services with Professional Experience</div>
+                            <div class="contact-info-logo">
+                                <div class="phone-numbers">
+                                    <span>+255 677 01 47 40</span>
+                                    <span>+255 763 95 79 08</span>
+                                    <span>+255 682 84 35 52</span>
+                                </div>
+                                <div class="email">kinguelectricaltz@gmail.com</div>
+                                <div class="address">P.O. Box 62313, Dar Es Salaam Tanzania.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="invoice-title" id="preview-doc-type">PROFORMA INVOICE</div>
+                </div>
+                
+                <div class="invoice-details">
+                    <div class="client-info">
+                        <div class="info-title" id="client-title">TO:</div>
+                        <div class="client-details">
+                            <p id="preview-client-name"><strong>GREENLIGHT PLANNET TANZANIA LTD</strong></p>
+                            <p id="preview-client-address">ARUSHA, TANZANIA</p>
+                            <p id="preview-client-tin">TIN Number: 109-628-980</p>
+                            <p id="preview-client-vat"></p>
+                            <p id="preview-client-phone">Phone: +255 765 432 100</p>
+                            <p id="preview-client-email">Email: accounts@greenlight.co.tz</p>
+                        </div>
+                    </div>
+                    
+                    <div class="invoice-info">
+                        <div class="info-title" id="preview-details-title">INVOICE DETAILS:</div>
+                        <div class="invoice-info-box" id="preview-info-box">
+                            <p><strong id="preview-doc-number-label">Invoice #:</strong> <span id="preview-invoice-number">PROFORMA/GL/06/2025/001</span></p>
+                            <p><strong id="preview-doc-date-label">Date:</strong> <span id="preview-invoice-date">June 15, 2025</span></p>
+                            <p><strong>Due Date:</strong> <span id="preview-due-date">July 15, 2025</span></p>
+                            <p><strong>Validity:</strong> <span id="preview-validity">30 days</span></p>
+                            <p><strong>Delivery:</strong> <span id="preview-delivery-time">7 days after PO</span></p>
+                            <p><strong>Payment Terms:</strong> <span id="preview-payment-terms">100% after delivery</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin: 30px 0; padding: 20px; background-color: var(--kingu-light); border-radius: 8px; border-left: 4px solid var(--kingu-green);" id="preview-intro-box">
+                    <h3 style="color: var(--kingu-green); margin-bottom: 15px;" id="preview-subject">Subject: Proforma Invoice for Electrical Services</h3>
+                    <p id="preview-quotation-text" style="color: #555; line-height: 1.6;">
+                        PROFORMA INVOICE<br><br>
+                        This proforma invoice is prepared for the services rendered. 
+                        All prices are inclusive of VAT where applicable and are valid for <span id="preview-validity-text">30 days</span>.
+                    </p>
+                </div>
+                
+                <table class="invoice-items-preview" id="preview-items-table">
+                    <thead>
+                        <tr>
+                            <th>DESCRIPTION</th>
+                            <th>UNITS</th>
+                            <th>UNIT PRICE</th>
+                            <th>AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview-items">
+                        <!-- Items will be added here dynamically -->
+                    </tbody>
+                </table>
+                
+                <div class="invoice-totals" id="preview-totals">
+                    <!-- Totals will be added here dynamically -->
+                </div>
+                
+                <!-- Horizontal Terms & Bank Details for Print -->
+                <div class="preview-terms-bank print-terms-bank" id="preview-terms-bank">
+                    <div class="preview-terms-box" id="preview-terms-box">
+                        <div class="preview-terms-title"><i class="fas fa-file-contract"></i> TERMS & CONDITIONS</div>
+                        <div class="terms-content">
+                            <p id="preview-notes">This quotation shall remain valid for 30 days only. Prices are inclusive of VAT where applicable. Delivery subject to stock availability.</p>
+                            <div class="contact-badges" style="margin-top: 15px;">
+                                <span class="contact-badge-small">
+                                    <i class="fas fa-phone"></i> +255 682 843 552
+                                </span>
+                                <span class="contact-badge-small whatsapp-badge">
+                                    <i class="fab fa-whatsapp"></i> +255 682 843 552
+                                </span>
+                                <span class="contact-badge-small email-badge">
+                                    <i class="fas fa-envelope"></i> Kinguelectricaltz@gmail.com
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-bank-box" id="preview-bank-box">
+                        <div class="preview-bank-title"><i class="fas fa-university"></i> BANK DETAILS</div>
+                        <div class="bank-content">
+                            <p id="preview-bank-details">STANBIC BANK TANZANIA LIMITED, ACCOUNT: 912 000 275 9274</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer with Kingu Electrical Logo -->
+                <div class="invoice-footer">
+                    <div class="authorized-signature">
+                        <div class="signature-line"></div>
+                        <div class="signature-text">Authorized Signature & Company Stamp</div>
+                        <div style="margin-top: 30px; font-size: 14px; color: #666; text-align: center;">
+                            <p id="preview-thank-you">Thank you for your business! We value our partnership and look forward to serving you.</p>
+                            <p style="margin-top: 10px;"><em id="preview-footer-note">This is a computer-generated document. No signature is required.</em></p>
+                            <p style="margin-top: 15px; font-weight: bold; color: var(--kingu-green);">
+                                <i class="fas fa-envelope"></i> kinguelectricaltz@gmail.com | 
+                                <i class="fas fa-phone"></i> +255 682 84 35 52
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- A4 Preview Container -->
+            <div id="a4-preview" class="a4-preview-container">
+                <div class="print-content" id="print-content">
+                    <!-- Content will be inserted here by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Other sections (hidden by default) -->
+            <div id="client-database" class="history-container">
+                <div class="header">
+                    <h1><i class="fas fa-users"></i> Client Database</h1>
+                    <button class="btn btn-primary" id="add-client-btn">
+                        <i class="fas fa-user-plus"></i> Add New Client
+                    </button>
+                </div>
+                <div id="client-list">
+                    <p>Loading client database...</p>
+                </div>
+            </div>
+            
+            <div id="proforma-invoices" class="history-container">
+                <div class="header">
+                    <h1><i class="fas fa-file-contract"></i> Proforma Invoices</h1>
+                </div>
+                <div id="proforma-list">
+                    <p>Loading proforma invoices...</p>
+                </div>
+            </div>
+            
+            <div id="invoice-history" class="history-container">
+                <div class="header">
+                    <h1><i class="fas fa-history"></i> Document History</h1>
+                </div>
+                <div id="history-list">
+                    <p>Loading document history...</p>
+                </div>
+            </div>
+            
+            <div id="reports-section" class="history-container">
+                <div class="header">
+                    <h1><i class="fas fa-chart-bar"></i> Reports & Analytics</h1>
+                </div>
+                <div id="reports-content">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h3 style="color: var(--kingu-green); margin-bottom: 15px;">Sales Overview</h3>
+                            <p>Total Revenue: <strong>TSh 0.00</strong></p>
+                            <p>Invoices This Month: <strong>0</strong></p>
+                            <p>Pending Payments: <strong>TSh 0.00</strong></p>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h3 style="color: var(--kingu-green); margin-bottom: 15px;">Quick Actions</h3>
+                            <button class="btn" style="width: 100%; margin-bottom: 10px; background-color: var(--kingu-light);">
+                                <i class="fas fa-file-export"></i> Export Monthly Report
+                            </button>
+                            <button class="btn" style="width: 100%; margin-bottom: 10px; background-color: var(--kingu-light);">
+                                <i class="fas fa-chart-pie"></i> View Sales Chart
+                            </button>
+                            <button class="btn" style="width: 100%; background-color: var(--kingu-light);">
+                                <i class="fas fa-file-invoice"></i> Generate Tax Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="settings-section" class="history-container">
+                <div class="header">
+                    <h1><i class="fas fa-cog"></i> System Settings</h1>
+                </div>
+                <div id="settings-content">
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h3 style="color: var(--kingu-green); margin-bottom: 15px;">Company Settings</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Default Currency</label>
+                                <select class="form-control">
+                                    <option selected>Tanzanian Shilling (TSh)</option>
+                                    <option>US Dollar ($)</option>
+                                    <option>Euro (€)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Default VAT Rate (%)</label>
+                                <input type="number" class="form-control" value="18" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Invoice Number Prefix</label>
+                                <input type="text" class="form-control" value="PROFORMA/GL">
+                            </div>
+                            <div class="form-group">
+                                <label>Default Payment Terms</label>
+                                <select class="form-control">
+                                    <option selected>100% after delivery</option>
+                                    <option>50% advance, 50% after delivery</option>
+                                    <option>30 days net</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Main Application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing application...');
+            
+            // Initialize main application
+            initializeMainApplication();
+            
+            // Initialize PWA features (non-blocking)
+            setTimeout(initializePWA, 100);
+            
+            // Show system ready notification
+            setTimeout(() => {
+                showNotification('Kingu Invoice System Ready!', 'success');
+            }, 500);
+            
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(function(registration) {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(function(err) {
+                            console.log('ServiceWorker registration failed: ', err);
+                        });
+                });
+            }
+        });
+        
+        // ==================== MAIN APPLICATION ====================
+        function initializeMainApplication() {
+            console.log('Initializing main application...');
+            
+            // Initialize variables
+            const btnProforma = document.getElementById('btn-proforma');
+            const btnStandard = document.getElementById('btn-standard');
+            const btnQuotation = document.getElementById('btn-quotation');
+            const invoiceForm = document.getElementById('invoice-form');
+            const invoicePreview = document.getElementById('invoice-preview');
+            const pageTitle = document.getElementById('page-title');
+            const docNumberLabel = document.getElementById('doc-number-label');
+            const docDateLabel = document.getElementById('doc-date-label');
+            const detailsTitle = document.getElementById('details-title');
+            const itemsTitle = document.getElementById('items-title');
+            const saveBtn = document.getElementById('save-btn');
+            const pdfBtn = document.getElementById('pdf-btn');
+            const printBtn = document.getElementById('print-btn');
+            const previewBtn = document.getElementById('preview-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const sendEmailBtn = document.getElementById('send-email-btn');
+            const loadSampleBtn = document.getElementById('load-sample-btn');
+            const whatsappBtn = document.getElementById('whatsapp-btn');
+            
+            // Set current document type
+            let currentDocumentType = 'Proforma';
+            
+            // ==================== UTILITY FUNCTIONS ====================
+            function getCurrencySymbol(currency) {
+                switch(currency) {
+                    case 'USD': return '$';
+                    case 'EUR': return '€';
+                    case 'GBP': return '£';
+                    default: return 'TSh';
+                }
+            }
+            
+            function formatCurrency(amount, currency) {
+                const symbol = getCurrencySymbol(currency);
+                const formattedAmount = parseFloat(amount).toFixed(2)
+                    .replace(/\d(?=(\d{3})+\.)/g, '$&,');
+                
+                return symbol + (currency === 'TSh' ? '' : ' ') + formattedAmount;
+            }
+            
+            function extractCurrencyValue(formattedValue) {
+                return parseFloat(formattedValue.replace(/[^0-9.-]+/g,"")) || 0;
+            }
+            
+            function formatDate(dateString) {
+                if (!dateString || isNaN(new Date(dateString).getTime())) return '';
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            }
+            
+            function convertNumberToWords(num) {
+                const units = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+                const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+                const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+                
+                if (num === 0) return 'zero';
+                
+                let words = '';
+                
+                const millions = Math.floor(num / 1000000);
+                if (millions > 0) {
+                    words += convertNumberToWords(millions) + ' million ';
+                    num %= 1000000;
+                }
+                
+                const thousands = Math.floor(num / 1000);
+                if (thousands > 0) {
+                    words += convertNumberToWords(thousands) + ' thousand ';
+                    num %= 1000;
+                }
+                
+                const hundreds = Math.floor(num / 100);
+                if (hundreds > 0) {
+                    words += units[hundreds] + ' hundred ';
+                    num %= 100;
+                }
+                
+                if (num > 0) {
+                    if (words !== '') words += 'and ';
+                    
+                    if (num < 10) {
+                        words += units[num];
+                    } else if (num < 20) {
+                        words += teens[num - 10];
+                    } else {
+                        words += tens[Math.floor(num / 10)];
+                        if (num % 10 > 0) {
+                            words += '-' + units[num % 10];
+                        }
+                    }
+                }
+                
+                return words.trim() + ' shillings';
+            }
+            
+            // ==================== INVOICE TYPE SELECTOR ====================
+            btnProforma.addEventListener('click', function() {
+                setActiveTypeButton('proforma');
+                updateDocumentUI('Proforma');
+                currentDocumentType = 'Proforma';
+            });
+            
+            btnStandard.addEventListener('click', function() {
+                setActiveTypeButton('standard');
+                updateDocumentUI('Standard');
+                currentDocumentType = 'Standard';
+            });
+            
+            btnQuotation.addEventListener('click', function() {
+                setActiveTypeButton('quotation');
+                updateDocumentUI('Quotation');
+                currentDocumentType = 'Quotation';
+            });
+            
+            function setActiveTypeButton(type) {
+                btnProforma.classList.remove('active');
+                btnStandard.classList.remove('active');
+                btnQuotation.classList.remove('active', 'quotation-active');
+                
+                if (type === 'proforma') {
+                    btnProforma.classList.add('active');
+                } else if (type === 'standard') {
+                    btnStandard.classList.add('active');
+                } else if (type === 'quotation') {
+                    btnQuotation.classList.add('active', 'quotation-active');
+                }
+            }
+            
+            function updateDocumentUI(type) {
+                pageTitle.textContent = `Create ${type} Invoice`;
+                
+                if (type === 'Proforma') {
+                    docNumberLabel.textContent = 'Proforma Number';
+                    docDateLabel.textContent = 'Proforma Date';
+                    detailsTitle.innerHTML = '<i class="fas fa-info-circle"></i> Proforma Details';
+                    detailsTitle.classList.remove('quotation-section-title');
+                    itemsTitle.innerHTML = '<i class="fas fa-list-alt"></i> Proforma Items';
+                    itemsTitle.classList.remove('quotation-section-title');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Proforma';
+                    document.getElementById('extra-fields').style.display = 'block';
+                    document.getElementById('extra-fields').classList.remove('quotation-fields');
+                    document.getElementById('extra-fields').classList.add('proforma-fields');
+                    invoiceForm.classList.remove('quotation-form-container');
+                    invoiceForm.style.borderTop = '4px solid var(--kingu-green)';
+                    document.getElementById('totals-section').classList.remove('quotation-totals-section');
+                    document.getElementById('items-table').classList.remove('quotation-items-table');
+                    document.getElementById('add-item-btn').classList.remove('quotation-add-item-btn');
+                    updateInvoiceNumberPrefix('PROFORMA/GL');
+                } 
+                else if (type === 'Standard') {
+                    docNumberLabel.textContent = 'Invoice Number';
+                    docDateLabel.textContent = 'Invoice Date';
+                    detailsTitle.innerHTML = '<i class="fas fa-info-circle"></i> Invoice Details';
+                    detailsTitle.classList.remove('quotation-section-title');
+                    itemsTitle.innerHTML = '<i class="fas fa-list-alt"></i> Invoice Items';
+                    itemsTitle.classList.remove('quotation-section-title');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Invoice';
+                    document.getElementById('extra-fields').style.display = 'none';
+                    invoiceForm.classList.remove('quotation-form-container');
+                    invoiceForm.style.borderTop = '4px solid var(--kingu-green)';
+                    document.getElementById('totals-section').classList.remove('quotation-totals-section');
+                    document.getElementById('items-table').classList.remove('quotation-items-table');
+                    document.getElementById('add-item-btn').classList.remove('quotation-add-item-btn');
+                    updateInvoiceNumberPrefix('INV/GL');
+                } 
+                else if (type === 'Quotation') {
+                    docNumberLabel.textContent = 'Quotation Number';
+                    docDateLabel.textContent = 'Quotation Date';
+                    detailsTitle.innerHTML = '<i class="fas fa-info-circle"></i> Quotation Details';
+                    detailsTitle.classList.add('quotation-section-title');
+                    itemsTitle.innerHTML = '<i class="fas fa-list-alt"></i> Quotation Items';
+                    itemsTitle.classList.add('quotation-section-title');
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Quotation';
+                    document.getElementById('extra-fields').style.display = 'block';
+                    document.getElementById('extra-fields').classList.remove('proforma-fields');
+                    document.getElementById('extra-fields').classList.add('quotation-fields');
+                    invoiceForm.classList.add('quotation-form-container');
+                    invoiceForm.style.borderTop = '4px solid var(--kingu-blue)';
+                    document.getElementById('totals-section').classList.add('quotation-totals-section');
+                    document.getElementById('items-table').classList.add('quotation-items-table');
+                    document.getElementById('add-item-btn').classList.add('quotation-add-item-btn');
+                    updateInvoiceNumberPrefix('QUOTE/GL');
+                }
+            }
+            
+            function updateInvoiceNumberPrefix(prefix) {
+                const invoiceNumber = document.getElementById('invoice-number');
+                const currentNumber = invoiceNumber.value;
+                const parts = currentNumber.split('/');
+                
+                if (parts.length >= 2) {
+                    parts[0] = prefix.split('/')[0];
+                    invoiceNumber.value = parts.join('/');
+                } else {
+                    generateInvoiceNumber(prefix);
+                }
+            }
+            
+            function generateInvoiceNumber(prefix = 'PROFORMA/GL') {
+                const now = new Date();
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                const year = now.getFullYear();
+                
+                const key = `${prefix}-counter`;
+                let counter = localStorage.getItem(key) || 0;
+                counter = parseInt(counter) + 1;
+                localStorage.setItem(key, counter.toString());
+                
+                const invoiceNumber = `${prefix}/${month}/${year}/${counter.toString().padStart(3, '0')}`;
+                document.getElementById('invoice-number').value = invoiceNumber;
+                
+                return invoiceNumber;
+            }
+            
+            document.getElementById('generate-number-btn').addEventListener('click', function() {
+                let prefix = 'PROFORMA/GL';
+                if (currentDocumentType === 'Standard') prefix = 'INV/GL';
+                if (currentDocumentType === 'Quotation') prefix = 'QUOTE/GL';
+                
+                generateInvoiceNumber(prefix);
+            });
+            
+            // ==================== CLEAR FORM FUNCTION ====================
+            clearBtn.addEventListener('click', function() {
+                clearForm();
+            });
+            
+            function clearForm() {
+                if (confirm('Are you sure you want to clear the form? All entered data will be lost.')) {
+                    // Reset form fields
+                    document.getElementById('client-name').value = '';
+                    document.getElementById('client-email').value = '';
+                    document.getElementById('client-phone').value = '';
+                    document.getElementById('client-address').value = '';
+                    document.getElementById('client-tin').value = '';
+                    document.getElementById('client-vat').value = '';
+                    
+                    // Reset invoice items
+                    const invoiceItems = document.getElementById('invoice-items');
+                    invoiceItems.innerHTML = `
+                        <tr>
+                            <td><input type="text" class="item-description" placeholder="Service description" value="Service item"></td>
+                            <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="currency-symbol" style="margin-right: 5px;">TSh</span>
+                                    <input type="number" class="item-price" min="0" step="0.01" value="0.00" style="flex: 1;">
+                                </div>
+                            </td>
+                            <td class="item-total text-right">TSh 0.00</td>
+                            <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `;
+                    
+                    // Set dates
+                    const today = new Date();
+                    document.getElementById('invoice-date').value = today.toISOString().split('T')[0];
+                    
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + 30);
+                    document.getElementById('due-date').value = dueDate.toISOString().split('T')[0];
+                    
+                    // Reset discount
+                    document.getElementById('discount-type').value = 'none';
+                    document.getElementById('discount-value-container').style.display = 'none';
+                    document.getElementById('discount-row').style.display = 'none';
+                    document.getElementById('discount-value').value = '0';
+                    
+                    // Reset custom terms
+                    document.getElementById('custom-terms-container').style.display = 'none';
+                    
+                    // Generate new invoice number
+                    generateInvoiceNumber('PROFORMA/GL');
+                    
+                    updateTotals();
+                    
+                    showNotification('Form cleared successfully!', 'success');
+                }
+            }
+            
+            // ==================== SAVE FORM FUNCTION ====================
+            saveBtn.addEventListener('click', function() {
+                saveDocument();
+            });
+            
+            function saveDocument() {
+                try {
+                    const formData = collectFormData();
+                    let documents = [];
+                    
+                    try {
+                        const stored = localStorage.getItem('kingu-documents');
+                        if (stored) {
+                            documents = JSON.parse(stored);
+                            if (!Array.isArray(documents)) documents = [];
+                        }
+                    } catch (e) {
+                        console.error('Error parsing stored documents:', e);
+                        documents = [];
+                    }
+                    
+                    // Add document details
+                    formData.id = Date.now();
+                    formData.createdAt = new Date().toISOString();
+                    formData.status = 'draft';
+                    formData.documentType = currentDocumentType;
+                    formData.clientName = document.getElementById('client-name').value;
+                    formData.grandTotal = extractCurrencyValue(document.getElementById('grand-total').textContent);
+                    formData.currency = document.getElementById('currency').value;
+                    formData.documentNumber = document.getElementById('invoice-number').value;
+                    
+                    // Save to localStorage
+                    documents.unshift(formData); // Add to beginning for newest first
+                    localStorage.setItem('kingu-documents', JSON.stringify(documents));
+                    
+                    // Update history view
+                    loadDocumentHistory();
+                    
+                    showNotification(`${currentDocumentType} saved successfully to history!`, 'success');
+                    
+                    // Optionally auto-load into preview
+                    generateDocument();
+                } catch (error) {
+                    console.error('Save document error:', error);
+                    showNotification('Failed to save document. Please try again.', 'error');
+                }
+            }
+
+            // Function to load document history
+            function loadDocumentHistory() {
+                try {
+                    const stored = localStorage.getItem('kingu-documents');
+                    const documents = stored ? JSON.parse(stored) : [];
+                    const historyList = document.getElementById('history-list');
+                    
+                    if (!Array.isArray(documents) || documents.length === 0) {
+                        historyList.innerHTML = '<p>No documents saved yet.</p>';
+                        return;
+                    }
+                    
+                    let html = `
+                        <div style="overflow-x: auto;">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Document #</th>
+                                        <th>Type</th>
+                                        <th>Client</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    documents.forEach(doc => {
+                        const date = doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'N/A';
+                        const amount = formatCurrency(doc.grandTotal || 0, doc.currency || 'TSh');
+                        
+                        html += `
+                            <tr>
+                                <td>${doc.documentNumber || 'N/A'}</td>
+                                <td>${doc.documentType || 'Invoice'}</td>
+                                <td>${doc.clientName || 'N/A'}</td>
+                                <td>${date}</td>
+                                <td>${amount}</td>
+                                <td><span class="status-badge status-${doc.status || 'draft'}">${doc.status || 'Draft'}</span></td>
+                                <td>
+                                    <button class="action-btn-small" onclick="loadSavedDocument(${doc.id})" title="Load" style="background-color: var(--kingu-green); color: white;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="action-btn-small" onclick="deleteSavedDocument(${doc.id})" title="Delete" style="background-color: var(--kingu-red); color: white;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="action-btn-small" onclick="printSavedDocument(${doc.id})" title="Print" style="background-color: var(--kingu-blue); color: white;">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    
+                    historyList.innerHTML = html;
+                } catch (error) {
+                    console.error('Error loading document history:', error);
+                    document.getElementById('history-list').innerHTML = '<p>Error loading document history.</p>';
+                }
+            }
+
+            // Function to load a saved document
+            function loadSavedDocument(id) {
+                try {
+                    const stored = localStorage.getItem('kingu-documents');
+                    if (!stored) {
+                        showNotification('No documents found!', 'error');
+                        return;
+                    }
+                    
+                    const documents = JSON.parse(stored);
+                    const doc = documents.find(d => d.id === id);
+                    
+                    if (!doc) {
+                        showNotification('Document not found!', 'error');
+                        return;
+                    }
+                    
+                    // Set document type
+                    if (doc.documentType === 'Quotation') {
+                        setActiveTypeButton('quotation');
+                        updateDocumentUI('Quotation');
+                        currentDocumentType = 'Quotation';
+                    } else if (doc.documentType === 'Standard') {
+                        setActiveTypeButton('standard');
+                        updateDocumentUI('Standard');
+                        currentDocumentType = 'Standard';
+                    } else {
+                        setActiveTypeButton('proforma');
+                        updateDocumentUI('Proforma');
+                        currentDocumentType = 'Proforma';
+                    }
+                    
+                    // Populate form fields
+                    document.getElementById('invoice-number').value = doc.documentNumber || '';
+                    document.getElementById('invoice-date').value = doc.documentDate || '';
+                    document.getElementById('due-date').value = doc.dueDate || '';
+                    document.getElementById('currency').value = doc.currency || 'TSh';
+                    document.getElementById('delivery-time').value = doc.deliveryTime || '7';
+                    document.getElementById('payment-terms').value = doc.paymentTerms || '100% after delivery';
+                    document.getElementById('client-name').value = doc.clientName || '';
+                    document.getElementById('client-email').value = doc.clientEmail || '';
+                    document.getElementById('client-phone').value = doc.clientPhone || '';
+                    document.getElementById('client-address').value = doc.clientAddress || '';
+                    document.getElementById('client-tin').value = doc.clientTIN || '';
+                    document.getElementById('client-vat').value = doc.clientVAT || '';
+                    document.getElementById('bank-details').value = doc.bankDetails || '';
+                    document.getElementById('notes').value = doc.notes || '';
+                    
+                    // Set discount
+                    const discountType = doc.discountType || 'none';
+                    document.getElementById('discount-type').value = discountType;
+                    if (discountType !== 'none') {
+                        document.getElementById('discount-value-container').style.display = 'block';
+                        document.getElementById('discount-value').value = doc.discountValue || 0;
+                    }
+                    
+                    // Set VAT options
+                    const vatType = doc.vatType || 'none';
+                    if (vatType === 'standard') {
+                        document.getElementById('vat-standard').checked = true;
+                        document.querySelectorAll('.tax-option').forEach(opt => opt.classList.remove('active'));
+                        document.querySelector('#vat-standard').closest('.tax-option').classList.add('active');
+                    } else if (vatType === 'custom') {
+                        document.getElementById('vat-custom').checked = true;
+                        document.querySelectorAll('.tax-option').forEach(opt => opt.classList.remove('active'));
+                        document.querySelector('#vat-custom').closest('.tax-option').classList.add('active');
+                        document.getElementById('vat-custom-container').style.display = 'block';
+                        document.getElementById('custom-vat-rate').value = doc.vatRate || 18;
+                    }
+                    
+                    // Load items
+                    const itemsTable = document.getElementById('invoice-items');
+                    itemsTable.innerHTML = '';
+                    
+                    if (doc.items && doc.items.length > 0) {
+                        doc.items.forEach(item => {
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td><input type="text" class="item-description" value="${item.description || ''}"></td>
+                                <td><input type="number" class="item-quantity" min="0" step="0.01" value="${item.quantity || 1}"></td>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <span class="currency-symbol" style="margin-right: 5px;">${getCurrencySymbol(doc.currency || 'TSh')}</span>
+                                        <input type="number" class="item-price" min="0" step="0.01" value="${item.price || 0}" style="flex: 1;">
+                                    </div>
+                                </td>
+                                <td class="item-total text-right">${formatCurrency(item.total || 0, doc.currency || 'TSh')}</td>
+                                <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                            `;
+                            itemsTable.appendChild(newRow);
+                        });
+                    } else {
+                        // Add default row if no items
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td><input type="text" class="item-description" placeholder="Service description"></td>
+                            <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="currency-symbol" style="margin-right: 5px;">${getCurrencySymbol(doc.currency || 'TSh')}</span>
+                                    <input type="number" class="item-price" min="0" step="0.01" value="0.00" style="flex: 1;">
+                                </div>
+                            </td>
+                            <td class="item-total text-right">${getCurrencySymbol(doc.currency || 'TSh')} 0.00</td>
+                            <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                        `;
+                        itemsTable.appendChild(newRow);
+                    }
+                    
+                    updateCurrencySymbol();
+                    updateTotals();
+                    
+                    // Navigate to create invoice page
+                    document.getElementById('nav-create').click();
+                    
+                    showNotification('Document loaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error loading saved document:', error);
+                    showNotification('Failed to load document. Please try again.', 'error');
+                }
+            }
+
+            // Function to delete a saved document
+            function deleteSavedDocument(id) {
+                if (confirm('Are you sure you want to delete this document?')) {
+                    try {
+                        const stored = localStorage.getItem('kingu-documents');
+                        if (!stored) return;
+                        
+                        let documents = JSON.parse(stored);
+                        documents = documents.filter(doc => doc.id !== id);
+                        localStorage.setItem('kingu-documents', JSON.stringify(documents));
+                        
+                        loadDocumentHistory();
+                        showNotification('Document deleted successfully!', 'success');
+                    } catch (error) {
+                        console.error('Error deleting document:', error);
+                        showNotification('Failed to delete document.', 'error');
+                    }
+                }
+            }
+
+            // Function to print a saved document
+            function printSavedDocument(id) {
+                try {
+                    const stored = localStorage.getItem('kingu-documents');
+                    if (!stored) {
+                        showNotification('No documents found!', 'error');
+                        return;
+                    }
+                    
+                    const documents = JSON.parse(stored);
+                    const doc = documents.find(d => d.id === id);
+                    
+                    if (!doc) {
+                        showNotification('Document not found!', 'error');
+                        return;
+                    }
+                    
+                    // Load the document first
+                    loadSavedDocument(id);
+                    
+                    // Then generate and print
+                    setTimeout(() => {
+                        generateDocument();
+                        setTimeout(() => {
+                            printDocument();
+                        }, 500);
+                    }, 100);
+                } catch (error) {
+                    console.error('Error printing saved document:', error);
+                    showNotification('Failed to print document.', 'error');
+                }
+            }
+
+            // Expose functions to global scope
+            window.loadSavedDocument = loadSavedDocument;
+            window.deleteSavedDocument = deleteSavedDocument;
+            window.printSavedDocument = printSavedDocument;
+            
+            // ==================== SEND EMAIL FUNCTION ====================
+            sendEmailBtn.addEventListener('click', function() {
+                sendEmail();
+            });
+            
+            function sendEmail() {
+                const clientEmail = document.getElementById('client-email').value;
+                const clientName = document.getElementById('client-name').value;
+                
+                if (!clientEmail) {
+                    alert('Please enter client email address');
+                    document.getElementById('client-email').focus();
+                    return;
+                }
+                
+                const documentNumber = document.getElementById('invoice-number').value;
+                const documentType = currentDocumentType;
+                
+                // Create mailto link with subject and body
+                const subject = encodeURIComponent(`${documentType} - ${documentNumber} - Kingu Electrical Company Limited`);
+                const body = encodeURIComponent(`
+Dear ${clientName},
+
+Please find attached your ${documentType.toLowerCase()} (${documentNumber}) from Kingu Electrical Company Limited.
+
+This is a computer-generated document. If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+Kingu Electrical Company Limited
+Tel: +255 682 843 552
+Email: kinguelectricaltz@gmail.com
+                `);
+                
+                const mailtoLink = `mailto:${clientEmail}?subject=${subject}&body=${body}`;
+                
+                // Open email client
+                window.open(mailtoLink, '_blank');
+                
+                showNotification('Email client opened. Please attach the PDF and send.', 'info');
+            }
+            
+            // ==================== WHATSAPP SHARE FUNCTION ====================
+            whatsappBtn.addEventListener('click', function() {
+                shareViaWhatsApp();
+            });
+            
+            function shareViaWhatsApp() {
+                const clientPhone = document.getElementById('client-phone').value;
+                const clientName = document.getElementById('client-name').value;
+                const documentNumber = document.getElementById('invoice-number').value;
+                const documentType = currentDocumentType;
+                
+                if (!clientPhone) {
+                    alert('Please enter client phone number to share via WhatsApp');
+                    document.getElementById('client-phone').focus();
+                    return;
+                }
+                
+                // Clean phone number (remove + and spaces)
+                const cleanPhone = clientPhone.replace(/[+\s]/g, '');
+                const message = encodeURIComponent(
+`Hello ${clientName},
+
+Your ${documentType} (${documentNumber}) from Kingu Electrical is ready.
+Please check your email for the PDF document.
+
+For any questions, please contact us at +255 682 843 552.
+
+Thank you,
+Kingu Electrical Company Limited`
+                );
+                
+                const whatsappLink = `https://wa.me/${cleanPhone}?text=${message}`;
+                window.open(whatsappLink, '_blank');
+                
+                showNotification('Opening WhatsApp...', 'info');
+            }
+            
+            // ==================== LOAD SAMPLE FUNCTION ====================
+            loadSampleBtn.addEventListener('click', function() {
+                loadSampleProforma();
+            });
+            
+            function loadSampleProforma() {
+                const isQuotation = currentDocumentType === 'Quotation';
+                
+                if (isQuotation) {
+                    // Load sample quotation data
+                    const sampleItems = [
+                        { description: "Electrical Installation for Office Building", quantity: "1.00", price: "5000000.00" },
+                        { description: "Lighting System Installation", quantity: "1.00", price: "2500000.00" },
+                        { description: "Power Distribution Board", quantity: "2.00", price: "750000.00" },
+                        { description: "Wiring and Cabling", quantity: "500.00", price: "5000.00" },
+                        { description: "Circuit Breakers and Switches", quantity: "50.00", price: "25000.00" },
+                        { description: "Labor and Installation", quantity: "15.00", price: "100000.00" }
+                    ];
+                    
+                    const invoiceItems = document.getElementById('invoice-items');
+                    invoiceItems.innerHTML = '';
+                    
+                    sampleItems.forEach(item => {
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td><input type="text" class="item-description" value="${item.description}"></td>
+                            <td><input type="number" class="item-quantity" min="0" step="0.01" value="${item.quantity}"></td>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="currency-symbol" style="margin-right: 5px;">TSh</span>
+                                    <input type="number" class="item-price" min="0" step="0.01" value="${item.price}" style="flex: 1;">
+                                </div>
+                            </td>
+                            <td class="item-total text-right">TSh 0.00</td>
+                            <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                        `;
+                        
+                        invoiceItems.appendChild(newRow);
+                        
+                        newRow.querySelector('.item-quantity').addEventListener('input', updateTotals);
+                        newRow.querySelector('.item-price').addEventListener('input', updateTotals);
+                    });
+                    
+                    document.getElementById('currency').value = 'TSh';
+                    updateCurrencySymbol();
+                    
+                    // Set sample client info for quotation
+                    document.getElementById('client-name').value = 'TANZANIA COMMERCIAL BANK';
+                    document.getElementById('client-address').value = 'DAR ES SALAAM, TANZANIA';
+                    document.getElementById('client-tin').value = '200-456-789';
+                    document.getElementById('client-phone').value = '+255 222 123 456';
+                    document.getElementById('client-email').value = 'procurement@tcb.co.tz';
+                    document.getElementById('payment-terms').value = '30% advance, 70% after completion';
+                    document.getElementById('bank-details').value = 'STANBIC BANK 912 000 275 9274 (KINGU ELECTRICAL COMPANY LIMITED)';
+                    document.getElementById('notes').value = 'This quotation is valid for 45 days.\nDelivery time: 30 days after order confirmation.\nPrices include VAT and all taxes.\nWarranty: 12 months on all installations.';
+                    document.getElementById('delivery-time').value = '30';
+                    
+                    updateTotals();
+                    
+                    showNotification('Sample quotation loaded for TANZANIA COMMERCIAL BANK project.', 'success');
+                } else {
+                    // Load sample proforma data
+                    const sampleItems = [
+                        { description: "Engine service and Preventive maintenance", quantity: "1.00", price: "350000.00" },
+                        { description: "PLC check and configuration", quantity: "1.00", price: "250000.00" },
+                        { description: "AC Alternator cleanup and ATS", quantity: "1.00", price: "170000.00" },
+                        { description: "Air filter", quantity: "1.00", price: "25000.00" },
+                        { description: "fanbelt", quantity: "1.00", price: "8500.00" },
+                        { description: "Coolant", quantity: "5.00", price: "15000.00" },
+                        { description: "Engine oil", quantity: "9.00", price: "14000.00" }
+                    ];
+                    
+                    const invoiceItems = document.getElementById('invoice-items');
+                    invoiceItems.innerHTML = '';
+                    
+                    sampleItems.forEach(item => {
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td><input type="text" class="item-description" value="${item.description}"></td>
+                            <td><input type="number" class="item-quantity" min="0" step="0.01" value="${item.quantity}"></td>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <span class="currency-symbol" style="margin-right: 5px;">TSh</span>
+                                    <input type="number" class="item-price" min="0" step="0.01" value="${item.price}" style="flex: 1;">
+                                </div>
+                            </td>
+                            <td class="item-total text-right">TSh 0.00</td>
+                            <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                        `;
+                        
+                        invoiceItems.appendChild(newRow);
+                        
+                        newRow.querySelector('.item-quantity').addEventListener('input', updateTotals);
+                        newRow.querySelector('.item-price').addEventListener('input', updateTotals);
+                    });
+                    
+                    document.getElementById('currency').value = 'TSh';
+                    updateCurrencySymbol();
+                    
+                    // Set sample client info
+                    document.getElementById('client-name').value = 'GREENLIGHT PLANNET TANZANIA LTD';
+                    document.getElementById('client-address').value = 'ARUSHA, TANZANIA';
+                    document.getElementById('client-tin').value = '109-628-980';
+                    document.getElementById('client-phone').value = '+255 765 432 100';
+                    document.getElementById('client-email').value = 'accounts@greenlight.co.tz';
+                    document.getElementById('payment-terms').value = '100% after delivery';
+                    document.getElementById('bank-details').value = 'STANBIC BANK 912 000 275 9274 (KINGU ELECTRICAL COMPANY LIMITED)';
+                    document.getElementById('notes').value = 'This Proforma shall remain valid for 30 days only.\nDelivery time: 7 days after PO issue.';
+                    
+                    updateTotals();
+                    
+                    showNotification('Sample proforma invoice loaded from DG SERVICE GREENLIGHT June 2025.pdf', 'success');
+                }
+            }
+            
+            // ==================== PREVIEW FUNCTIONALITY ====================
+            previewBtn.addEventListener('click', function() {
+                generateDocument();
+            });
+            
+            function generateDocument() {
+                updateEnhancedPreview();
+                
+                // Show the preview container
+                invoiceForm.style.display = 'none';
+                invoicePreview.style.display = 'block';
+                
+                // Show action buttons
+                printBtn.style.display = 'inline-flex';
+                pdfBtn.style.display = 'inline-flex';
+                document.getElementById('whatsapp-btn').style.display = 'inline-flex';
+                
+                // Hide other sections
+                document.getElementById('type-selector').style.display = 'none';
+                document.getElementById('client-database').style.display = 'none';
+                document.getElementById('proforma-invoices').style.display = 'none';
+                document.getElementById('invoice-history').style.display = 'none';
+                document.getElementById('reports-section').style.display = 'none';
+                document.getElementById('settings-section').style.display = 'none';
+                
+                // Update navigation
+                document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                
+                // Update header title
+                const isQuotation = currentDocumentType === 'Quotation';
+                const isProforma = currentDocumentType === 'Proforma';
+                pageTitle.textContent = isQuotation ? 'Preview Quotation' : 
+                               isProforma ? 'Preview Proforma' : 'Preview Invoice';
+                
+                // Scroll to preview
+                invoicePreview.scrollIntoView({ behavior: 'smooth' });
+                
+                showNotification(`${currentDocumentType} preview generated!`, 'success');
+            }
+            
+            function updateEnhancedPreview() {
+                const isQuotation = currentDocumentType === 'Quotation';
+                const isProforma = currentDocumentType === 'Proforma';
+                const currency = document.getElementById('currency').value;
+                
+                // Update preview labels
+                updatePreviewLabels(isQuotation);
+                
+                // Update stamps visibility
+                document.querySelector('.stamp').style.display = isQuotation ? 'none' : 'block';
+                document.querySelector('.quotation-stamp').style.display = isQuotation ? 'block' : 'none';
+                
+                // Update client info
+                document.getElementById('preview-client-name').innerHTML = `<strong>${document.getElementById('client-name').value || 'Client Name'}</strong>`;
+                document.getElementById('preview-client-address').textContent = document.getElementById('client-address').value || 'Client Address';
+                document.getElementById('preview-client-tin').textContent = document.getElementById('client-tin').value ? `TIN Number: ${document.getElementById('client-tin').value}` : '';
+                document.getElementById('preview-client-vat').textContent = document.getElementById('client-vat').value ? `VAT: ${document.getElementById('client-vat').value}` : '';
+                document.getElementById('preview-client-phone').textContent = document.getElementById('client-phone').value ? `Phone: ${document.getElementById('client-phone').value}` : '';
+                document.getElementById('preview-client-email').textContent = document.getElementById('client-email').value ? `Email: ${document.getElementById('client-email').value}` : '';
+                
+                // Update document details
+                document.getElementById('preview-invoice-number').textContent = document.getElementById('invoice-number').value;
+                document.getElementById('preview-invoice-date').textContent = formatDate(document.getElementById('invoice-date').value);
+                
+                const dueDate = document.getElementById('due-date').value;
+                if (dueDate) {
+                    // Add due date to preview if it exists
+                    const infoBox = document.getElementById('preview-info-box');
+                    let dueDateElement = infoBox.querySelector('#preview-due-date');
+                    if (!dueDateElement) {
+                        const dueDateRow = document.createElement('p');
+                        dueDateRow.innerHTML = `<strong>Due Date:</strong> <span id="preview-due-date">${formatDate(dueDate)}</span>`;
+                        infoBox.appendChild(dueDateRow);
+                    } else {
+                        dueDateElement.textContent = formatDate(dueDate);
+                    }
+                }
+                
+                const validityDays = '30'; // Default validity
+                document.getElementById('preview-validity').textContent = `${validityDays} days`;
+                document.getElementById('preview-validity-text').textContent = `${validityDays} days`;
+                
+                const deliveryTime = document.getElementById('delivery-time').value || '7';
+                document.getElementById('preview-delivery-time').textContent = `${deliveryTime} days after PO`;
+                
+                let paymentTerms = document.getElementById('payment-terms').value || '';
+                if (paymentTerms === 'Custom') {
+                    paymentTerms = document.getElementById('custom-payment-terms').value || '';
+                }
+                document.getElementById('preview-payment-terms').textContent = paymentTerms;
+                
+                // Update document items
+                const previewItems = document.getElementById('preview-items');
+                previewItems.innerHTML = '';
+                
+                const rows = document.querySelectorAll('#invoice-items tr');
+                rows.forEach(row => {
+                    const description = row.querySelector('.item-description').value || 'Service item';
+                    const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                    const total = quantity * price;
+                    
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${description}</td>
+                        <td>${quantity.toFixed(2)}</td>
+                        <td>${formatCurrency(price, currency)}</td>
+                        <td>${formatCurrency(total, currency)}</td>
+                    `;
+                    
+                    previewItems.appendChild(newRow);
+                });
+                
+                // Update totals
+                const subtotal = extractCurrencyValue(document.getElementById('subtotal').textContent);
+                const discount = extractCurrencyValue(document.getElementById('discount-amount').textContent);
+                const tax = extractCurrencyValue(document.getElementById('tax').textContent);
+                const grandTotal = extractCurrencyValue(document.getElementById('grand-total').textContent);
+                
+                // Update totals in preview
+                const previewTotals = document.getElementById('preview-totals');
+                let totalsHTML = `
+                    <div class="total-row">
+                        <span class="total-label">Subtotal:</span>
+                        <span class="total-value" id="preview-subtotal">${formatCurrency(subtotal, currency)}</span>
+                    </div>
+                `;
+                
+                if (discount > 0) {
+                    totalsHTML += `
+                        <div class="total-row">
+                            <span class="total-label">Discount:</span>
+                            <span class="total-value" id="preview-discount">${formatCurrency(discount, currency)}</span>
+                        </div>
+                    `;
+                }
+                
+                totalsHTML += `
+                    <div class="total-row">
+                        <span class="total-label">VAT (18%):</span>
+                        <span class="total-value" id="preview-tax">${formatCurrency(tax, currency)}</span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span class="total-label" id="preview-grand-total-label">${isQuotation ? 'TOTAL QUOTATION:' : 'GRAND TOTAL:'}</span>
+                        <span class="total-value" id="preview-grand-total">${formatCurrency(grandTotal, currency)}</span>
+                    </div>
+                `;
+                
+                // Add amount in words
+                const amountWords = document.getElementById('amount-words').textContent;
+                totalsHTML += `
+                    <div style="margin-top: 15px; font-size: 14px; font-style: italic; color: #555;">
+                        <strong>Amount in Words:</strong> ${amountWords}
+                    </div>
+                `;
+                
+                previewTotals.innerHTML = totalsHTML;
+                
+                // Update terms and bank details
+                document.getElementById('preview-bank-details').textContent = document.getElementById('bank-details').value || '';
+                document.getElementById('preview-notes').textContent = document.getElementById('notes').value || '';
+                
+                // Update container styling
+                invoicePreview.classList.toggle('quotation-preview-container', isQuotation);
+                
+                // Update terms box styling
+                const termsBox = document.getElementById('preview-terms-box');
+                const bankBox = document.getElementById('preview-bank-box');
+                const termsTitle = document.getElementById('preview-terms-box').querySelector('.preview-terms-title');
+                
+                if (isQuotation) {
+                    termsBox.classList.add('quotation-terms-box');
+                    bankBox.classList.add('quotation-bank-box');
+                    termsTitle.classList.add('quotation-terms-title');
+                } else {
+                    termsBox.classList.remove('quotation-terms-box');
+                    bankBox.classList.remove('quotation-bank-box');
+                    termsTitle.classList.remove('quotation-terms-title');
+                }
+            }
+            
+            function updatePreviewLabels(isQuotation) {
+                // Update document type in header
+                const previewDocType = document.getElementById('preview-doc-type');
+                previewDocType.textContent = isQuotation ? 'QUOTATION' : (currentDocumentType === 'Proforma' ? 'PROFORMA INVOICE' : 'TAX INVOICE');
+                previewDocType.classList.toggle('quotation-title', isQuotation);
+                
+                // Update client title
+                document.getElementById('client-title').textContent = isQuotation ? 'TO:' : 'BILL TO:';
+                document.getElementById('client-title').classList.toggle('quotation-info-title', isQuotation);
+                
+                // Update details title
+                document.getElementById('preview-details-title').textContent = isQuotation ? 'QUOTATION DETAILS:' : 'INVOICE DETAILS:';
+                document.getElementById('preview-details-title').classList.toggle('quotation-info-title', isQuotation);
+                
+                // Update document number and date labels
+                document.getElementById('preview-doc-number-label').textContent = isQuotation ? 'Quotation #:' : 'Invoice #:';
+                document.getElementById('preview-doc-date-label').textContent = isQuotation ? 'Quotation Date:' : 'Invoice Date:';
+                
+                // Update info box styling
+                document.getElementById('preview-info-box').classList.toggle('quotation-info-box', isQuotation);
+                
+                // Update items table styling
+                document.getElementById('preview-items-table').classList.toggle('quotation-items-preview', isQuotation);
+                
+                // Update totals section styling
+                document.getElementById('preview-totals').classList.toggle('quotation-totals', isQuotation);
+                document.getElementById('preview-grand-total-label').textContent = isQuotation ? 'TOTAL QUOTATION:' : 'GRAND TOTAL:';
+                
+                // Update intro box
+                const introBox = document.getElementById('preview-intro-box');
+                if (isQuotation) {
+                    introBox.style.backgroundColor = 'rgba(41, 128, 185, 0.1)';
+                    introBox.style.borderLeft = '4px solid var(--kingu-blue)';
+                    document.getElementById('preview-subject').style.color = 'var(--kingu-blue)';
+                    document.getElementById('preview-subject').textContent = 'Subject: Quotation for Electrical Services';
+                    document.getElementById('preview-quotation-text').innerHTML = `
+                        Dear Sir/Madam,<br><br>
+                        Thank you for your inquiry. We are pleased to submit our quotation for the requested electrical services. 
+                        All prices are inclusive of VAT where applicable and are valid for <span id="preview-validity-text">30 days</span>.
+                    `;
+                } else {
+                    const isProforma = currentDocumentType === 'Proforma';
+                    introBox.style.backgroundColor = 'var(--kingu-light)';
+                    introBox.style.borderLeft = '4px solid var(--kingu-green)';
+                    document.getElementById('preview-subject').style.color = 'var(--kingu-green)';
+                    document.getElementById('preview-subject').textContent = isProforma ? 'Subject: Proforma Invoice for Electrical Services' : 'Subject: Invoice for Electrical Services';
+                    document.getElementById('preview-quotation-text').innerHTML = `
+                        ${isProforma ? 'PROFORMA INVOICE' : 'TAX INVOICE'}<br><br>
+                        This ${isProforma ? 'proforma invoice' : 'invoice'} is prepared for the services rendered. 
+                        All prices are inclusive of VAT where applicable.
+                    `;
+                }
+                
+                // Update footer text
+                document.getElementById('preview-thank-you').textContent = isQuotation 
+                    ? 'Thank you for considering our quotation. We look forward to the opportunity to serve you.' 
+                    : 'Thank you for your business! We value our partnership and look forward to serving you.';
+                document.getElementById('preview-footer-note').textContent = isQuotation 
+                    ? 'This is a computer-generated quotation. No signature is required.' 
+                    : 'This is a computer-generated document. No signature is required.';
+            }
+            
+            // ==================== PRINT FUNCTIONALITY ====================
+            printBtn.addEventListener('click', function() {
+                printDocument();
+            });
+            
+            function printDocument() {
+                const isQuotation = currentDocumentType === 'Quotation';
+                
+                // Show appropriate stamp before printing
+                if (isQuotation) {
+                    document.querySelector('.quotation-stamp').style.display = 'block';
+                } else {
+                    document.querySelector('.stamp').style.display = 'block';
+                }
+                
+                setTimeout(() => {
+                    window.print();
+                    // Hide stamp after printing
+                    setTimeout(() => {
+                        document.querySelector('.stamp').style.display = 'none';
+                        document.querySelector('.quotation-stamp').style.display = 'none';
+                    }, 100);
+                }, 100);
+            }
+            
+            // ==================== PDF EXPORT ====================
+            pdfBtn.addEventListener('click', function() {
+                exportToPDF();
+            });
+            
+            async function exportToPDF() {
+                try {
+                    const originalText = pdfBtn.innerHTML;
+                    pdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+                    pdfBtn.disabled = true;
+                    
+                    // Ensure preview is generated
+                    generateDocument();
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    const printContent = document.getElementById('invoice-preview');
+                    
+                    const canvas = await html2canvas(printContent, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        allowTaint: true,
+                        onclone: function(clonedDoc) {
+                            // Ensure stamps are visible in the cloned document
+                            const isQuotation = currentDocumentType === 'Quotation';
+                            if (isQuotation) {
+                                clonedDoc.querySelector('.quotation-stamp').style.display = 'block';
+                            } else {
+                                clonedDoc.querySelector('.stamp').style.display = 'block';
+                            }
+                        }
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdfWidth = doc.internal.pageSize.getWidth();
+                    const pdfHeight = doc.internal.pageSize.getHeight();
+                    
+                    // Calculate image dimensions to fit A4
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+                    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                    const imgY = 5;
+                    
+                    // Add image to PDF
+                    doc.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                    
+                    // Generate filename
+                    const docNumber = document.getElementById('invoice-number').value.replace(/[^a-zA-Z0-9]/g, '_');
+                    const fileName = `Kingu_${currentDocumentType}_${docNumber}.pdf`;
+                    doc.save(fileName);
+                    
+                    showNotification('PDF exported successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('PDF export error:', error);
+                    showNotification('Failed to export PDF. Please try again.', 'error');
+                } finally {
+                    pdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Export PDF';
+                    pdfBtn.disabled = false;
+                }
+            }
+            
+            // ==================== FORM FUNCTIONS ====================
+            function collectFormData() {
+                const type = currentDocumentType;
+                const items = [];
+                
+                document.querySelectorAll('#invoice-items tr').forEach(row => {
+                    const description = row.querySelector('.item-description')?.value || '';
+                    const quantity = parseFloat(row.querySelector('.item-quantity')?.value || 0);
+                    const price = parseFloat(row.querySelector('.item-price')?.value || 0);
+                    const total = quantity * price;
+                    
+                    if (description) {
+                        items.push({
+                            description,
+                            quantity,
+                            price,
+                            total
+                        });
+                    }
+                });
+                
+                const vatOption = document.querySelector('input[name="vat-option"]:checked');
+                const vatType = vatOption ? vatOption.value : 'none';
+                let vatRate = 0;
+                
+                if (vatType === 'standard') {
+                    vatRate = 18;
+                } else if (vatType === 'custom') {
+                    vatRate = parseFloat(document.getElementById('custom-vat-rate').value) || 0;
+                }
+                
+                return {
+                    type: type,
+                    documentNumber: document.getElementById('invoice-number').value,
+                    documentDate: document.getElementById('invoice-date').value,
+                    dueDate: document.getElementById('due-date').value,
+                    currency: document.getElementById('currency').value,
+                    deliveryTime: document.getElementById('delivery-time').value,
+                    paymentTerms: document.getElementById('payment-terms').value,
+                    customPaymentTerms: document.getElementById('custom-payment-terms')?.value || '',
+                    clientName: document.getElementById('client-name').value,
+                    clientEmail: document.getElementById('client-email').value,
+                    clientPhone: document.getElementById('client-phone').value,
+                    clientAddress: document.getElementById('client-address').value,
+                    clientTIN: document.getElementById('client-tin').value,
+                    clientVAT: document.getElementById('client-vat').value,
+                    items: items,
+                    discountType: document.getElementById('discount-type').value,
+                    discountValue: parseFloat(document.getElementById('discount-value')?.value || 0),
+                    vatType: vatType,
+                    vatRate: vatRate,
+                    vatNumber: document.getElementById('vat-number-input')?.value || '',
+                    bankDetails: document.getElementById('bank-details').value,
+                    notes: document.getElementById('notes').value,
+                    grandTotal: extractCurrencyValue(document.getElementById('grand-total').textContent)
+                };
+            }
+            
+            // ==================== INITIALIZE FORM ====================
+            function initializeForm() {
+                // Set current date
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('invoice-date').value = today;
+                
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + 30);
+                document.getElementById('due-date').value = dueDate.toISOString().split('T')[0];
+                
+                // Generate initial invoice number
+                generateInvoiceNumber('PROFORMA/GL');
+                
+                // Initialize VAT options
+                document.querySelectorAll('input[name="vat-option"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        const vatCustomContainer = document.getElementById('vat-custom-container');
+                        const vatRow = document.getElementById('vat-row');
+                        const taxOptions = document.querySelectorAll('.tax-option');
+                        
+                        taxOptions.forEach(option => option.classList.remove('active'));
+                        this.closest('.tax-option').classList.add('active');
+                        
+                        if (this.value === 'none') {
+                            vatCustomContainer.style.display = 'none';
+                            vatRow.style.display = 'none';
+                        } else if (this.value === 'standard') {
+                            vatCustomContainer.style.display = 'none';
+                            vatRow.style.display = 'flex';
+                            document.querySelector('#vat-row .total-label').textContent = 'VAT (18%):';
+                        } else if (this.value === 'custom') {
+                            vatCustomContainer.style.display = 'block';
+                            vatRow.style.display = 'flex';
+                            const customRate = document.getElementById('custom-vat-rate').value || 0;
+                            document.querySelector('#vat-row .total-label').textContent = `Tax (${customRate}%):`;
+                        }
+                        
+                        updateTotals();
+                    });
+                });
+                
+                document.getElementById('custom-vat-rate').addEventListener('input', function() {
+                    if (document.querySelector('input[name="vat-option"]:checked').value === 'custom') {
+                        document.querySelector('#vat-row .total-label').textContent = `Tax (${this.value}%):`;
+                        updateTotals();
+                    }
+                });
+                
+                // Initialize invoice form calculations
+                document.addEventListener('input', function(e) {
+                    if (e.target.classList.contains('item-quantity') || 
+                        e.target.classList.contains('item-price')) {
+                        updateItemTotal(e.target.closest('tr'));
+                        updateTotals();
+                    }
+                });
+                
+                document.getElementById('add-item-btn').addEventListener('click', function() {
+                    addNewItem();
+                });
+                
+                // Add predefined item buttons
+                document.getElementById('add-service-item').addEventListener('click', function() {
+                    addPredefinedItem('service');
+                });
+                
+                document.getElementById('add-product-item').addEventListener('click', function() {
+                    addPredefinedItem('product');
+                });
+                
+                document.getElementById('add-labor-item').addEventListener('click', function() {
+                    addPredefinedItem('labor');
+                });
+                
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.delete-item')) {
+                        e.target.closest('tr').remove();
+                        updateTotals();
+                    }
+                });
+                
+                document.getElementById('discount-type').addEventListener('change', function() {
+                    const discountValueContainer = document.getElementById('discount-value-container');
+                    const discountRow = document.getElementById('discount-row');
+                    
+                    if (this.value === 'none') {
+                        discountValueContainer.style.display = 'none';
+                        discountRow.style.display = 'none';
+                    } else {
+                        discountValueContainer.style.display = 'block';
+                        discountRow.style.display = 'flex';
+                        
+                        if (this.value === 'percentage') {
+                            document.getElementById('discount-label').textContent = 'Discount (%):';
+                        } else {
+                            document.getElementById('discount-label').textContent = 'Discount (Amount):';
+                        }
+                    }
+                    updateTotals();
+                });
+                
+                document.getElementById('discount-value').addEventListener('input', updateTotals);
+                
+                document.getElementById('payment-terms').addEventListener('change', function() {
+                    const customTermsContainer = document.getElementById('custom-terms-container');
+                    if (this.value === 'Custom') {
+                        customTermsContainer.style.display = 'flex';
+                    } else {
+                        customTermsContainer.style.display = 'none';
+                    }
+                });
+                
+                // Update currency symbol when currency changes
+                document.getElementById('currency').addEventListener('change', function() {
+                    updateCurrencySymbol();
+                    updateTotals();
+                });
+                
+                // Initialize navigation
+                initializeNavigation();
+                
+                // Initialize initial totals
+                updateTotals();
+
+                // Initialize document history
+                loadDocumentHistory();
+            }
+            
+            function updateItemTotal(row) {
+                const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                const total = quantity * price;
+                const currency = document.getElementById('currency').value;
+                const currencySymbol = getCurrencySymbol(currency);
+                
+                row.querySelector('.item-total').textContent = 
+                    `${currencySymbol} ${total.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+            }
+            
+            function updateTotals() {
+                let subtotal = 0;
+                
+                document.querySelectorAll('#invoice-items tr').forEach(row => {
+                    const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                    subtotal += quantity * price;
+                });
+                
+                const discountType = document.getElementById('discount-type').value;
+                const discountValue = parseFloat(document.getElementById('discount-value').value) || 0;
+                let discountAmount = 0;
+                
+                if (discountType === 'percentage') {
+                    discountAmount = (subtotal * discountValue) / 100;
+                } else if (discountType === 'fixed') {
+                    discountAmount = discountValue;
+                }
+                
+                const taxable = subtotal - discountAmount;
+                
+                const vatOption = document.querySelector('input[name="vat-option"]:checked');
+                const vatType = vatOption ? vatOption.value : 'none';
+                let vatRate = 0;
+                let vatAmount = 0;
+                let grandTotal = taxable;
+                
+                if (vatType !== 'none') {
+                    if (vatType === 'standard') {
+                        vatRate = 18;
+                    } else if (vatType === 'custom') {
+                        vatRate = parseFloat(document.getElementById('custom-vat-rate').value) || 0;
+                    }
+                    vatAmount = (taxable * vatRate) / 100;
+                    grandTotal = taxable + vatAmount;
+                    
+                    const vatRow = document.getElementById('vat-row');
+                    vatRow.style.display = 'flex';
+                    const vatLabel = vatRow.querySelector('.total-label');
+                    const vatTypeLabel = vatType === 'standard' ? 'VAT' : 'Tax';
+                    vatLabel.textContent = `${vatTypeLabel} (${vatRate}%):`;
+                    document.getElementById('tax').textContent = 
+                        `${getCurrencySymbol(document.getElementById('currency').value)} ${vatAmount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                } else {
+                    document.getElementById('vat-row').style.display = 'none';
+                }
+                
+                const currency = document.getElementById('currency').value;
+                const currencySymbol = getCurrencySymbol(currency);
+                
+                document.getElementById('subtotal').textContent = 
+                    `${currencySymbol} ${subtotal.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                
+                document.getElementById('discount-amount').textContent = 
+                    `${currencySymbol} ${discountAmount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                
+                document.getElementById('grand-total').textContent = 
+                    `${currencySymbol} ${grandTotal.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+                
+                // Update amount in words
+                const amountWordsElement = document.getElementById('amount-words');
+                if (amountWordsElement) {
+                    amountWordsElement.textContent = 
+                        convertNumberToWords(grandTotal) + ' ' + currency + ' only';
+                }
+            }
+            
+            function updateCurrencySymbol() {
+                const currency = document.getElementById('currency').value;
+                const symbol = getCurrencySymbol(currency);
+                
+                // Update currency symbols in item rows
+                document.querySelectorAll('.currency-symbol').forEach(span => {
+                    span.textContent = symbol;
+                });
+                
+                // Update existing item totals
+                document.querySelectorAll('#invoice-items tr').forEach(row => {
+                    updateItemTotal(row);
+                });
+            }
+            
+            function addNewItem() {
+                const itemsTable = document.getElementById('invoice-items');
+                const currency = document.getElementById('currency').value;
+                const currencySymbol = getCurrencySymbol(currency);
+                
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="text" class="item-description" placeholder="Enter item description"></td>
+                    <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                    <td>
+                        <div style="display: flex; align-items: center;">
+                            <span class="currency-symbol" style="margin-right: 5px;">${currencySymbol}</span>
+                            <input type="number" class="item-price" min="0" step="0.01" value="0.00" style="flex: 1;">
+                        </div>
+                    </td>
+                    <td class="item-total text-right">${currencySymbol} 0.00</td>
+                    <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                `;
+                itemsTable.appendChild(newRow);
+                
+                // Add event listeners to the new row
+                newRow.querySelector('.item-quantity').addEventListener('input', updateTotals);
+                newRow.querySelector('.item-price').addEventListener('input', updateTotals);
+            }
+            
+            function addPredefinedItem(type) {
+                const currency = document.getElementById('currency').value;
+                const symbol = getCurrencySymbol(currency);
+                
+                let description = '';
+                let price = '0.00';
+                
+                switch(type) {
+                    case 'service':
+                        description = 'Electrical Service';
+                        price = '50000.00';
+                        break;
+                    case 'product':
+                        description = 'Electrical Product';
+                        price = '25000.00';
+                        break;
+                    case 'labor':
+                        description = 'Labor Hours';
+                        price = '15000.00';
+                        break;
+                }
+                
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="text" class="item-description" value="${description}"></td>
+                    <td><input type="number" class="item-quantity" min="0" step="0.01" value="1.00"></td>
+                    <td>
+                        <div style="display: flex; align-items: center;">
+                            <span class="currency-symbol" style="margin-right: 5px;">${symbol}</span>
+                            <input type="number" class="item-price" min="0" step="0.01" value="${price}" style="flex: 1;">
+                        </div>
+                    </td>
+                    <td class="item-total text-right">${symbol} 0.00</td>
+                    <td class="text-center"><button class="delete-item"><i class="fas fa-trash"></i></button></td>
+                `;
+                
+                document.getElementById('invoice-items').appendChild(newRow);
+                
+                // Add event listeners
+                newRow.querySelector('.item-quantity').addEventListener('input', updateTotals);
+                newRow.querySelector('.item-price').addEventListener('input', updateTotals);
+                
+                updateTotals();
+            }
+            
+            // Initialize navigation
+            function initializeNavigation() {
+                const invoiceForm = document.getElementById('invoice-form');
+                const invoicePreview = document.getElementById('invoice-preview');
+                const clientDatabase = document.getElementById('client-database');
+                const proformaInvoices = document.getElementById('proforma-invoices');
+                const invoiceHistory = document.getElementById('invoice-history');
+                const reportsSection = document.getElementById('reports-section');
+                const settingsSection = document.getElementById('settings-section');
+                const typeSelector = document.getElementById('type-selector');
+                const mainHeader = document.getElementById('main-header');
+                
+                const navCreate = document.getElementById('nav-create');
+                const navProforma = document.getElementById('nav-proforma');
+                const navHistory = document.getElementById('nav-history');
+                const navClients = document.getElementById('nav-clients');
+                const navReports = document.getElementById('nav-reports');
+                const navSettings = document.getElementById('nav-settings');
+                
+                function setActiveNav(activeElement) {
+                    document.querySelectorAll('.nav-link').forEach(nav => {
+                        nav.classList.remove('active');
+                    });
+                    activeElement.classList.add('active');
+                }
+                
+                function hideAllSections() {
+                    invoiceForm.style.display = 'none';
+                    invoicePreview.style.display = 'none';
+                    clientDatabase.style.display = 'none';
+                    proformaInvoices.style.display = 'none';
+                    invoiceHistory.style.display = 'none';
+                    reportsSection.style.display = 'none';
+                    settingsSection.style.display = 'none';
+                }
+                
+                navCreate.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    invoiceForm.style.display = 'block';
+                    typeSelector.style.display = 'flex';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = `Create ${currentDocumentType} Invoice`;
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'inline-flex';
+                    document.getElementById('whatsapp-btn').style.display = 'inline-flex';
+                });
+                
+                navProforma.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    proformaInvoices.style.display = 'block';
+                    typeSelector.style.display = 'none';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = 'Proforma Invoices';
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'none';
+                    document.getElementById('whatsapp-btn').style.display = 'none';
+                });
+                
+                navHistory.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    invoiceHistory.style.display = 'block';
+                    typeSelector.style.display = 'none';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = 'Document History';
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'none';
+                    document.getElementById('whatsapp-btn').style.display = 'none';
+                });
+                
+                navClients.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    clientDatabase.style.display = 'block';
+                    typeSelector.style.display = 'none';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = 'Client Database';
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'none';
+                    document.getElementById('whatsapp-btn').style.display = 'none';
+                });
+                
+                navReports.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    reportsSection.style.display = 'block';
+                    typeSelector.style.display = 'none';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = 'Reports & Analytics';
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'none';
+                    document.getElementById('whatsapp-btn').style.display = 'none';
+                });
+                
+                navSettings.addEventListener('click', function() {
+                    setActiveNav(this);
+                    hideAllSections();
+                    settingsSection.style.display = 'block';
+                    typeSelector.style.display = 'none';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = 'System Settings';
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'none';
+                    document.getElementById('whatsapp-btn').style.display = 'none';
+                });
+                
+                // New Document button
+                document.getElementById('new-document-btn').addEventListener('click', function() {
+                    clearForm();
+                    setActiveNav(navCreate);
+                    hideAllSections();
+                    invoiceForm.style.display = 'block';
+                    typeSelector.style.display = 'flex';
+                    mainHeader.style.display = 'flex';
+                    document.getElementById('page-title').textContent = `Create ${currentDocumentType} Invoice`;
+                    printBtn.style.display = 'none';
+                    pdfBtn.style.display = 'inline-flex';
+                    document.getElementById('whatsapp-btn').style.display = 'inline-flex';
+                });
+            }
+            
+            // Initialize the form
+            initializeForm();
+            console.log('Main application initialized successfully');
+        }
+        
+        // ==================== PWA FUNCTIONS ====================
+        function initializePWA() {
+            console.log('Initializing PWA features...');
+            
+            // Simple PWA notification (no service worker for now)
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App is installed');
+            }
+            
+            // Show PWA install prompt after delay
+            setTimeout(() => {
+                if (!window.matchMedia('(display-mode: standalone)').matches && 
+                    !localStorage.getItem('installPromptDismissed')) {
+                    showInstallNotification();
+                }
+            }, 3000);
+            
+            // Online/offline detection
+            window.addEventListener('online', updateConnectionStatus);
+            window.addEventListener('offline', updateConnectionStatus);
+            updateConnectionStatus();
+        }
+        
+        function updateConnectionStatus() {
+            const isOnline = navigator.onLine;
+            const offlineIndicator = document.getElementById('offlineIndicator');
+            const syncNotification = document.getElementById('syncNotification');
+            
+            if (isOnline) {
+                offlineIndicator.style.display = 'none';
+                // Show sync notification briefly when coming back online
+                syncNotification.style.display = 'flex';
+                setTimeout(() => {
+                    syncNotification.style.display = 'none';
+                }, 3000);
+            } else {
+                offlineIndicator.style.display = 'block';
+                syncNotification.style.display = 'none';
+            }
+        }
+        
+        function showInstallNotification() {
+            const pwaNotification = document.getElementById('pwaNotification');
+            pwaNotification.style.display = 'flex';
+        }
+        
+        function installApp() {
+            // Simplified install function
+            showNotification('To install this app, use your browser\'s "Add to Home Screen" feature.', 'info');
+            dismissPwaNotification();
+        }
+        
+        function dismissPwaNotification() {
+            const pwaNotification = document.getElementById('pwaNotification');
+            pwaNotification.style.display = 'none';
+            localStorage.setItem('installPromptDismissed', 'true');
+        }
+        
+        // ==================== NOTIFICATION FUNCTION ====================
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#116a41' : type === 'error' ? '#e63946' : '#2980b9'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                max-width: 300px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Expose functions to global scope
+        window.installApp = installApp;
+        window.dismissPwaNotification = dismissPwaNotification;
+    </script>
+</body>
+</html>
